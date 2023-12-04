@@ -65,8 +65,8 @@ int hash_calc(char *key) {
 char *HSET(HashTable *hashtable, char *key, char *value) {
   int index = hash_calc(key) % hashtable->size;
   Node_hash *newNode = (Node_hash *)malloc(sizeof(Node_hash));
-  newNode->key = key;
-  newNode->element = value;
+  newNode->key = strdup(key);
+  newNode->element = strdup(value);
   newNode->next = NULL;
   if (hashtable->table[index] == NULL) {
     hashtable->table[index] = newNode;

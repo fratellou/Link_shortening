@@ -1,40 +1,41 @@
-from flask import Flask, request, redirect
-import random
-import string
+import requests
 
-app = Flask(__name__)
+def shorten_url(url):
+    # URL of the shortening service
+    service_url = 'http://127.0.0.1:5000/'
 
-# Словарь для хранения сокращенных ссылок
-url_mapping = {}
+    # Send a POST request to shorten the URL
+    response = requests.post(service_url, data={'url': url})
 
-def generate_short_url():
-    # Генерация случайной короткой строки
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
-
-@app.route('/', methods=['POST'])
-def shorten_url():
-    long_url = request.form.get('url')
-
-    if not long_url:
-        return "Error: No URL provided", 400
-
-    # Генерация короткой ссылки
-    short_url = generate_short_url()
-
-    # Сохранение соответствия между короткой и длинной ссылкой
-    url_mapping[short_url] = long_url
-
-    return short_url
-
-@app.route('/<short_url>', methods=['GET'])
-def redirect_to_original(short_url):
-    # Получение длинной ссылки по короткой
-    long_url = url_mapping.get(short_url)
-
-    if long_url:
-        return redirect(long_url)
+    if response.status_code == 200:
+        # Print the shortened URL
+        return response.text
     else:
-        return "Error: URL not found", 404
+        return "Error"
+
+def redirect_to_original(short_key):
+    # URL of the shortening service with the short key
+    service_url = f'http://127.0.0.1:5000/{short_key}'
+
+    # Send a GET request to redirect to the original URL
+    response = requests.get(service_url, allow_redirects=False)
+
+    if response.status_code == 302:
+        # Extract the absolute URL from the 'Location' header
+        redirect_url = response.headers.get('Location')
+        print("Redirecting to the original URL:", redirect_url)
+    else:
+        print(response.text)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    original_url = input("Input the URL: ")
+    shortened = shorten_url(original_url)
+    if shortened != "Error":
+        print("Shortened URL:", shortened)
+        full_shortened = f"http://127.0.0.1:5000/{shortened}"
+        print("Full shortened URL:", full_shortened)
+
+        # Redirect to the original URL
+        redirect_to_original(shortened)
+    else:
+        print("Error")
