@@ -8,7 +8,6 @@ def shorten_url(url):
     response = requests.post(service_url, data={'url': url})
 
     if response.status_code == 200:
-        # Print the shortened URL
         return response.text
     else:
         return "Error"
@@ -26,6 +25,7 @@ def redirect_to_original(short_key):
         print("Redirecting to the original URL:", redirect_url)
     else:
         print(response.text)
+        
 
 if __name__ == '__main__':
     original_url = input("Input the URL: ")

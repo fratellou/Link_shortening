@@ -30,11 +30,11 @@ void hash(char *db_file, char **query, char *req) {
 
 // Function to perform hash commands
 void hash_commands(char **query, HashTable *hash, char *req) {
-  if (!strcmp(query[0], "HSET")) {
+  if (strcmp(query[0], "HSET") == 0) {
     strcpy(req, HSET(hash, query[2], query[3]));
   } else if (!strcmp(query[0], "HDEL")) {
     strcpy(req, HDEL(hash, query[2]));
-  } else if (!strcmp(query[0], "HGET")) {
+  } else if (strcmp(query[0], "HGET") == 0) {
     strcpy(req, HGET(hash, query[2]));
   } else {
     ERROR;
@@ -111,7 +111,7 @@ char *HDEL(HashTable *hashtable, char *key) {
 
 // Retrieves an element from the hash table based on the provided key
 char *HGET(HashTable *hashtable, char *key) {
-  int index = hash_calc(key);
+  int index = hash_calc(key) % hashtable->size;
   Node_hash *current = hashtable->table[index];
   while (current != NULL) {
     if (strcmp(current->key, key) == 0) {

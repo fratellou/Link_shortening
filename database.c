@@ -76,12 +76,14 @@ int main() {
 
 void handle_client(int client_socket) {
   pthread_mutex_init(&mutex, NULL);
+  pthread_mutex_lock(&mutex);
   char *db_file = "file.data";
   char *query = malloc(MAX_LEN * sizeof(char));
   if (read(client_socket, query, MAX_LEN) < 0) {
     perror("Error reading from socket");
     exit(EXIT_FAILURE);
   }
+  printf("\n%s\n", query);
   char *req = malloc(MAX_LEN * sizeof(char));
   char **parsed_query = malloc(MAX_LEN * sizeof(char *));
   char *istr = strtok(query, " ");
@@ -92,19 +94,25 @@ void handle_client(int client_socket) {
     istr = strtok(NULL, " ");
     i++;
   }
-
+  
   request(db_file, parsed_query, req);
-  send(client_socket, req, 4, 0);
+  size_t response_len = strlen(req);
+  send(client_socket, req, response_len, 0);
   free(query);
+  for (int j = 0; j < MAX_LEN; j++) {
+    free(parsed_query[j]);
+  }
+  free(parsed_query);
   free(req);
+  pthread_mutex_unlock(&mutex);
   pthread_mutex_destroy(&mutex);
+  sleep(1);
   close(client_socket);
 
   printf("Connection completed\n");
 }
 
 void request(char *db_file, char **query, char *req) {
-  pthread_mutex_lock(&mutex);
   if (!strcmp(query[0], "LADD") || !strcmp(query[0], "LINS") ||
       !strcmp(query[0], "LDEL") || !strcmp(query[0], "LREM") ||
       !strcmp(query[0], "LGET") || !strcmp(query[0], "LDEL_VAL") ||
@@ -136,5 +144,4 @@ void request(char *db_file, char **query, char *req) {
     set(db_file, query, req);
   } else
     ERROR;
-  pthread_mutex_unlock(&mutex);
 }
