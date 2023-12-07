@@ -8,6 +8,7 @@
 
 // This function implements the hash operation
 void hash(char *db_file, char **query, char *req) {
+  printf("\n%s\n", query[0]);
   char **line = malloc(MAX_LEN * sizeof(char *));
   int isnt_empty = 0;
   int size = 0;
@@ -30,11 +31,11 @@ void hash(char *db_file, char **query, char *req) {
 
 // Function to perform hash commands
 void hash_commands(char **query, HashTable *hash, char *req) {
-  if (strcmp(query[0], "HSET") == 0) {
+  if (strcasecmp(query[0], "HSET") == 0) {
     strcpy(req, HSET(hash, query[2], query[3]));
-  } else if (!strcmp(query[0], "HDEL")) {
+  } else if (strcasecmp(query[0], "HDEL") == 0) {
     strcpy(req, HDEL(hash, query[2]));
-  } else if (strcmp(query[0], "HGET") == 0) {
+  } else if (strcasecmp(query[0], "HGET") == 0) {
     strcpy(req, HGET(hash, query[2]));
   } else {
     ERROR;
@@ -54,11 +55,11 @@ HashTable *createHashTable(int size) {
 
 // Function to calculate the hash value for a given key
 int hash_calc(char *key) {
-  int hash = 0;
+  int hash_sum = 0;
   for (int i = 0; i < (int)strlen(key); i++) {
-    hash += (int)key[i];
+    hash_sum += (int)key[i];
   }
-  return hash % MAX_LEN;
+  return hash_sum % MAX_LEN;
 }
 
 // Function to insert or update a key-value pair in the hash table
@@ -74,8 +75,8 @@ char *HSET(HashTable *hashtable, char *key, char *value) {
     Node_hash *current = hashtable->table[index];
     while (current->next != NULL) {
       if (strcmp(current->key, key) == 0) {
-        current->element = value;
-        return value;
+        //current->element = strdup(value);
+        return current->element;
       }
       current = current->next;
     }
@@ -111,6 +112,7 @@ char *HDEL(HashTable *hashtable, char *key) {
 
 // Retrieves an element from the hash table based on the provided key
 char *HGET(HashTable *hashtable, char *key) {
+  printf("\nwork\n");
   int index = hash_calc(key) % hashtable->size;
   Node_hash *current = hashtable->table[index];
   while (current != NULL) {
@@ -159,11 +161,12 @@ void write_hash(char *filename, HashTable *hashtable, char *struct_name,
     }
     remove(filename);
     rename("temp.txt", filename);
+    fclose(fp);
+  fclose(temp);
   } else {
     ERROR;
   }
-  fclose(fp);
-  fclose(temp);
+  
 }
 
 // Frees the memory used by the hash table and its elements

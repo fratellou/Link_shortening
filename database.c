@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "array.h"
 #include "double_list.h"
@@ -22,9 +23,11 @@
 pthread_mutex_t mutex;
 
 void request(char *db_file, char **query, char *req);
-void handle_client(int client_socket);
+void* handle_client(void* arg);
 
 int main() {
+  pthread_t thread;
+  pthread_mutex_init(&mutex, NULL);
   struct sockaddr_in server_address, client_address;
 
   // Creating a socket
@@ -67,15 +70,18 @@ int main() {
     printf("New connection accepted\n");
 
     // Processing a client request in a separate thread
-    handle_client(client_socket);
+    pthread_create(&thread, NULL, handle_client, (void*)&client_socket);
+    pthread_join(thread, NULL);
+    //handle_client(client_socket);
   }
 
+  pthread_mutex_destroy(&mutex);
   close(server_socket);
   return 0;
 }
 
-void handle_client(int client_socket) {
-  pthread_mutex_init(&mutex, NULL);
+void* handle_client(void* arg) {
+  int client_socket = *((int*)arg);
   pthread_mutex_lock(&mutex);
   char *db_file = "file.data";
   char *query = malloc(MAX_LEN * sizeof(char));
@@ -83,13 +89,13 @@ void handle_client(int client_socket) {
     perror("Error reading from socket");
     exit(EXIT_FAILURE);
   }
-  printf("\n%s\n", query);
   char *req = malloc(MAX_LEN * sizeof(char));
   char **parsed_query = malloc(MAX_LEN * sizeof(char *));
   char *istr = strtok(query, " ");
   int i = 0;
   while (istr != NULL) {
     parsed_query[i] = malloc(MAX_LEN * sizeof(char));
+    if (!strcmp(istr, " ")) break;
     strcpy(parsed_query[i], istr);
     istr = strtok(NULL, " ");
     i++;
@@ -99,17 +105,17 @@ void handle_client(int client_socket) {
   size_t response_len = strlen(req);
   send(client_socket, req, response_len, 0);
   free(query);
-  for (int j = 0; j < MAX_LEN; j++) {
+  for (int j = 0; j < i; j++) {
     free(parsed_query[j]);
   }
   free(parsed_query);
   free(req);
-  pthread_mutex_unlock(&mutex);
-  pthread_mutex_destroy(&mutex);
   sleep(1);
   close(client_socket);
-
+  pthread_mutex_unlock(&mutex);
+  
   printf("Connection completed\n");
+  return NULL;
 }
 
 void request(char *db_file, char **query, char *req) {

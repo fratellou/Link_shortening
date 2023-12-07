@@ -11,7 +11,7 @@ def shorten_url(url):
         return response.text
     else:
         return "Error"
-
+'''
 def redirect_to_original(short_key):
     # URL of the shortening service with the short key
     service_url = f'http://127.0.0.1:5000/{short_key}'
@@ -25,7 +25,7 @@ def redirect_to_original(short_key):
         print("Redirecting to the original URL:", redirect_url)
     else:
         print(response.text)
-        
+   '''     
 
 if __name__ == '__main__':
     original_url = input("Input the URL: ")
@@ -36,6 +36,6 @@ if __name__ == '__main__':
         print("Full shortened URL:", full_shortened)
 
         # Redirect to the original URL
-        redirect_to_original(shortened)
+        #redirect_to_original(shortened)
     else:
         print("Error")

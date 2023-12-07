@@ -24,12 +24,12 @@ def shorten_url():
     # Generate a unique short key using SHA-1 hash
     short_key = hashlib.sha1(long_url.encode()).hexdigest()[:6]
     # Store the mapping in-memory (replace this with a database)
-    req = f"HSET hash {short_key} {long_url}"
+    req = f"HSET hash {short_key} {long_url}\0"
     database(req)
 
     return short_key
 
-@app.route('/<short_key>', methods=['GET'])
+'''@app.route('/<short_key>', methods=['GET'])
 def redirect_to_original(short_key):
     # Retrieve the original URL from the mapping
     req2 = f"HGET hash {short_key}\0"
@@ -39,7 +39,7 @@ def redirect_to_original(short_key):
     if long_url:
         return redirect(long_url, code=302)
     else:
-        return "Error: URL not found", 404
+        return "Error: URL not found", 404'''
         
 
 if __name__ == '__main__':
