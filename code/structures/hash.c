@@ -1,28 +1,22 @@
 #include "hash.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "macro.h"
-
 // This function implements the hash operation
 void hash(char *db_file, char **query, char *req) {
-  printf("\n%s\n", query[0]);
   char **line = malloc(MAX_LEN * sizeof(char *));
   int isnt_empty = 0;
   int size = 0;
   HashTable *hashtable = createHashTable(MAX_LEN);
-  STRUCT(line, db_file, isnt_empty, query[1], size, "hash:");
+  read_struct_from_file(line, db_file, &isnt_empty, query[1], &size, "hash:");
   if (isnt_empty) {
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < size-1; i++) {
       char new_string[MAX_LEN];
-      strcpy(new_string, line[i]);
-      char *first_key = strtok(line[i], ",");
+      strcpy(new_string, line[i+1]);
+      char *first_key = strtok(new_string, ",");
       char *second_val = strtok(NULL, ",");
       HSET(hashtable, first_key, second_val);
     }
   }
+
   hash_commands(query, hashtable, req);
   write_hash(db_file, hashtable, query[1], "hash:");
   free(line);
@@ -64,25 +58,37 @@ int hash_calc(char *key) {
 
 // Function to insert or update a key-value pair in the hash table
 char *HSET(HashTable *hashtable, char *key, char *value) {
-  int index = hash_calc(key) % hashtable->size;
-  Node_hash *newNode = (Node_hash *)malloc(sizeof(Node_hash));
-  newNode->key = strdup(key);
-  newNode->element = strdup(value);
-  newNode->next = NULL;
-  if (hashtable->table[index] == NULL) {
-    hashtable->table[index] = newNode;
-  } else {
+    int index = hash_calc(key) % hashtable->size;
     Node_hash *current = hashtable->table[index];
-    while (current->next != NULL) {
-      if (strcmp(current->key, key) == 0) {
-        //current->element = strdup(value);
-        return current->element;
-      }
-      current = current->next;
+    Node_hash *prev = NULL;
+
+   // Check if an item with this key exists in the list
+    while (current != NULL) {
+        if (strcmp(current->key, key) == 0) {
+           // An element with such a key already exists, therefore, we update its value and return it
+            free(current->element); 
+            current->element = strdup(value); 
+            return current->element;
+        }
+        prev = current;
+        current = current->next;
     }
-    current->next = newNode;
-  }
-  return value;
+
+   // The element with this key was not found, add a new element to the end of the list
+    Node_hash *newNode = (Node_hash *)malloc(sizeof(Node_hash));
+    newNode->key = strdup(key);
+    newNode->element = strdup(value);
+    newNode->next = NULL;
+
+    if (prev == NULL) {
+        // If there are no items in the list yet, add a new item to the beginning
+        hashtable->table[index] = newNode;
+    } else {
+        // If there are other items, add a new item to the end of the list
+        prev->next = newNode;
+    }
+
+    return value;
 }
 
 // Function to delete a key-value pair from the hash table
@@ -112,7 +118,6 @@ char *HDEL(HashTable *hashtable, char *key) {
 
 // Retrieves an element from the hash table based on the provided key
 char *HGET(HashTable *hashtable, char *key) {
-  printf("\nwork\n");
   int index = hash_calc(key) % hashtable->size;
   Node_hash *current = hashtable->table[index];
   while (current != NULL) {
